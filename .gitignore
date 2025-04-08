@@ -22,6 +22,7 @@ Gemfile.lock
 /bin/*
 !/bin/console
 !/bin/setup
+!/bin/publish
 
 # OS specific
 .DS_Store

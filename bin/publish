@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+
+require_relative "../lib/aira/version"
+
+def execute_command(command)
+  puts "> #{command}"
+  system(command) || exit(1)
+end
+
+def verify_clean_git
+  unless system("git diff --quiet HEAD")
+    puts "Error: There are uncommitted changes"
+    exit(1)
+  end
+end
+
+def verify_credentials
+  unless File.exist?(File.expand_path("~/.gem/credentials"))
+    puts "Error: RubyGems credentials not found"
+    puts "Please run: curl -u your-username https://rubygems.org/api/v1/api_key.yaml > ~/.gem/credentials"
+    puts "And then: chmod 0600 ~/.gem/credentials"
+    exit(1)
+  end
+end
+
+def main
+  version = Aira::VERSION
+  gem_name = "airarb"
+  gem_file = "#{gem_name}-#{version}.gem"
+
+  puts "Publishing #{gem_name} version #{version}"
+  
+  verify_clean_git
+  verify_credentials
+
+  puts "\nBuilding gem..."
+  execute_command("gem build #{gem_name}.gemspec")
+
+  puts "\nVerifying gem contents..."
+  execute_command("gem unpack #{gem_file}")
+  execute_command("rm -rf #{gem_name}-#{version}")
+
+  puts "\nPushing to RubyGems.org..."
+  execute_command("gem push #{gem_file}")
+
+  puts "\nCleaning up..."
+  execute_command("rm #{gem_file}")
+
+  puts "\nSuccess! Gem #{gem_name} version #{version} published"
+end
+
+main
