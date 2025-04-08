@@ -2,9 +2,8 @@
 
 > **Note**: This SDK is currently under active development and not ready for production use. Star and watch the repo to stay updated on our progress!
 
-[![Gem Version](https://badge.fury.io/rb/aidarb.svg)](https://badge.fury.io/rb/aidarb)
-[![Build Status](https://github.com/cs3b/ai-ruby-agent-sdk/workflows/CI/badge.svg)](https://github.com/cs3b/ai-ruby-agent-sdk/actions)
-[![Maintainability](https://api.codeclimate.com/v1/badges/a7d04c3bebb64d30cd42/maintainability)](https://codeclimate.com/github/cs3b/ai-ruby-agent-sdk/maintainability)
+[![Gem Version](https://badge.fury.io/rb/airarb.svg)](https://badge.fury.io/rb/airarb)
+[![Build Status](https://github.com/cs3b/ai-ruby-agent-sdk/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/cs3b/ai-ruby-agent-sdk/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 An elegant Ruby SDK for building AI agents that interact with both LLMs and system tools. The SDK follows a minimalist philosophy focusing on three core components:
