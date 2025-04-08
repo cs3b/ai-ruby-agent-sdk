@@ -1,65 +1,27 @@
-### Ruby ###
+# Ruby specific
 *.gem
 *.rbc
-/.config
-/coverage/
-/InstalledFiles
-/pkg/
-/spec/reports/
-/spec/examples.txt
-/test/tmp/
-/test/version_tmp/
-/tmp/
-
-# Used by dotenv library
-.env
-.env.*
-
-# Dependency directories
-/vendor/bundle/
 /.bundle/
-/lib/bundler/man/
+Gemfile.lock
 
-# Documentation cache
+# Documentation
 /.yardoc/
+/_yardoc/
 /doc/
-/rdoc/
 
-# Gem builds
+# Test coverage
+/coverage/
+/spec/reports/
+
+# Build and temporary files
 /pkg/
+/tmp/
+.rspec_status
 
-### macOS ###
+# Binary files (allow only console and setup)
+/bin/*
+!/bin/console
+!/bin/setup
+
+# OS specific
 .DS_Store
-.AppleDouble
-.LSOverride
-._*
-
-# Thumbnails
-._*
-
-# Files that might appear in the root of a volume
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-
-### IDE/Editor ###
-# RubyMine
-.idea/
-
-# VSCode
-.vscode/
-*.code-workspace
-
-# Sublime Text
-*.sublime-workspace
-*.sublime-project
-
-# Local history
-.history/
-
-# Log files
-*.log
