@@ -1,14 +1,14 @@
-require_relative "lib/ruby_ai_agent/version"
+require_relative "lib/aira/version"
 
 Gem::Specification.new do |spec|
-  spec.name = "ruby-ai-agent"
-  spec.version = RubyAIAgent::VERSION
+  spec.name = "aidarb"
+  spec.version = Aira::VERSION
   spec.authors = ["Michal Czyz"]
   spec.email = ["opensource@cs3b.com"]
 
   spec.summary = "Ruby SDK for building AI agents"
-  spec.description = "An elegant Ruby SDK for building AI agents that interact with both LLMs and system tools"
-  spec.homepage = "https://github.com/cs3b/ruby-ai-agent"
+  spec.description = "An elegant Ruby SDK for building AI Ruby Agent that interact with both LLMs and system tools"
+  spec.homepage = "https://github.com/cs3b/ai-ruby-agent-sdk"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.4.0"
 
