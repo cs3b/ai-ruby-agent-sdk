@@ -1,7 +1,7 @@
 require_relative "lib/aira/version"
 
 Gem::Specification.new do |spec|
-  spec.name = "aidarb"
+  spec.name = "airarb"
   spec.version = Aira::VERSION
   spec.authors = ["Michal Czyz"]
   spec.email = ["opensource@cs3b.com"]
