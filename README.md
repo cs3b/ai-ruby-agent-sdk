@@ -81,6 +81,57 @@ web_extractor.run(context)
 summarizer.run(context)
 ```
 
+## Tools Integration
+
+Aidarb seamlessly integrates with [RubyLLM](https://rubyllm.com) tools, allowing you to leverage the power of both frameworks:
+
+```ruby
+# Create a custom tool that extends RubyLLM::Tool
+module Aira
+  module Tools
+    class WeatherTool
+      include Aira::Tool
+      
+      description "Gets current weather for a location"
+      
+      param :latitude, desc: "Latitude (e.g., 52.5200)"
+      param :longitude, desc: "Longitude (e.g., 13.4050)"
+
+      def execute(latitude:, longitude:)
+        url = "https://api.open-meteo.com/v1/forecast?latitude=#{latitude}&longitude=#{longitude}&current=temperature_2m,wind_speed_10m"
+        response = Faraday.get(url)
+        JSON.parse(response.body)
+      rescue => e
+        { error: e.message }
+      end
+    end
+  end
+end
+
+# Use the tool in an agent
+agent :weather_reporter do
+  description "Get weather information for a location"
+  
+  input :latitude
+  input :longitude
+  output :weather_report
+  
+  tools :weather_tool
+  
+  steps do
+    step :fetch_weather, using: :weather_tool do |context|
+      tool = context[:_current_tool]
+      context[:weather_data] = tool.execute(
+        latitude: context[:latitude],
+        longitude: context[:longitude]
+      )
+    end
+    
+    # Additional steps...
+  end
+end
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.

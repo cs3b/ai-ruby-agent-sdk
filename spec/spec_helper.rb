@@ -1,6 +1,16 @@
 # frozen_string_literal: true
 
+require 'simplecov'
+
+SimpleCov.start do
+  add_filter '/spec/' # Exclude spec files from coverage
+  add_group 'Libraries', 'lib'
+end
+
 require "aira"
+
+# Require support files
+Dir[File.join(File.dirname(__FILE__), "support/**/*.rb")].each { |f| require f }
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
