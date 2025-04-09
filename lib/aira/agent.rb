@@ -1,131 +1,117 @@
 # frozen_string_literal: true
 
 require 'erb'
-require 'ruby_llm'
-require 'aira/logger'
+require 'logger'
+require 'aira/errors'
 
 module Aira
-  # Core Agent class representing a defined agent
+  # Agent class for defining and running AI agents
   class Agent
-    attr_accessor :name, :description, :input, :output, :prompt, :tools, :steps, 
-                  :loop_block, :review_block, :source_directory, :output_directory
+    attr_accessor :name, :description, :input, :output, :prompt, :tools, :steps,
+                  :source_directory, :output_directory, :loop_block, :review_block
 
     # Initialize a new agent
-    # @param name [Symbol] The name of the agent
+    # @param name [Symbol, String] The name of the agent
     def initialize(name)
       @name = name.to_sym
+      @description = nil
       @input = {}
       @output = {}
+      @prompt = nil
       @tools = []
       @steps = []
+      @source_directory = nil
+      @output_directory = nil
+      @loop_block = nil
+      @review_block = nil
       @logger = Aira::Logger.for(:agent)
     end
 
-    # Convert agent to a hash representation
-    # @return [Hash] The agent as a hash
-    def to_h
-      {
-        name: name,
-        description: description,
-        input: input,
-        output: output,
-        prompt: prompt,
-        tools: tools,
-        steps: steps,
-        loop_block: loop_block,
-        review_block: review_block,
-        source_directory: source_directory,
-        output_directory: output_directory
-      }
-    end
-
-    # Render the prompt using ERB. Data is passed as a hash.
-    # @param data [Hash] The data to interpolate into the prompt
-    # @return [String] The rendered prompt
-    def render_prompt(data = {})
-      begin
-        ERB.new(prompt).result_with_hash(data)
-      rescue StandardError => e
-        @logger.error("Failed to render prompt: #{e.message}")
-        raise PromptError.new("Failed to render prompt: #{e.message}", 
-          template: prompt, data: data, cause: e)
-      end
-    end
-
-    # Get tool instances for this agent
-    # @return [Array<Object>] The tool instances
-    def tool_instances
-      tools.map do |tool_name|
-        begin
-          ToolRegistryAdapter.get_tool(tool_name) || 
-            raise("Tool not found: #{tool_name}")
-        rescue StandardError => e
-          @logger.error("Failed to get tool '#{tool_name}': #{e.message}")
-          raise ToolError.new("Failed to get tool '#{tool_name}': #{e.message}", 
-            tool_name: tool_name, cause: e)
-        end
-      end
-    end
-
-    # Run the agent with the given context
-    # @param context [Hash] The context for the agent run
-    # @return [Hash] The updated context after the agent run
-    def run(context = {})
+    # Run the agent with the provided inputs
+    # @param inputs [Hash] The input values for the agent
+    # @return [Hash] The output values from the agent
+    def run(inputs = {})
       @logger.info("Running agent #{name}...")
-      
+      context = inputs.dup
+
       begin
         # Validate required inputs
-        validate_inputs(context)
+        validate_inputs(inputs)
         
-        rendered_prompt = render_prompt(context)
-        @logger.debug("Prompt: #{rendered_prompt}")
-        
-        # Here you'd normally call ruby-llm with the rendered prompt and tools
-        # For example:
-        # response = RubyLLM.chat(
-        #   messages: [{ role: "user", content: rendered_prompt }],
-        #   tools: tool_instances
-        # )
-        
-        # For steps workflows, iterate over steps
-        steps.each do |step|
-          step.run(context)
+        # Render the prompt if provided
+        if prompt
+          context[:_prompt] = render_prompt(context)
         end
-
-        # Run the loop block if defined
-        loop(context) if loop_block
-
-        # Run the review block if defined
-        review_block.call(context) if review_block
+        
+        # Execute each step in sequence
+        steps.each do |step|
+          step.execute(context)
+        end
+        
+        # Call the review block if provided
+        if review_block
+          review_block.call(context)
+        end
         
         @logger.info("Agent #{name} completed successfully")
         context
       rescue StandardError => e
         @logger.error("Agent #{name} failed: #{e.message}")
-        raise AgentError.new("Agent #{name} failed: #{e.message}", 
-          agent: name, context: context, cause: e)
+        raise AgentError, "Agent #{name} failed: #{e.message}"
       end
     end
 
-    # Run the loop block with the given context
-    # @param context [Hash] The context for the loop
-    def loop(context = {})
-      @logger.debug("Running loop for agent #{name}...")
-      instance_exec(context, &loop_block)
+    # Add a step to the agent
+    # @param step [Aira::Step] The step to add
+    # @return [Aira::Step] The added step
+    def add_step(step)
+      @steps << step
+      step
     end
-    
-    private
-    
-    # Validate that all required inputs are present in the context
-    # @param context [Hash] The context to validate
-    # @raise [AgentError] If a required input is missing
-    def validate_inputs(context)
-      missing_inputs = input.keys.select { |key| !context.key?(key) }
+
+    # Compare this agent with another agent
+    # @param other [Object] The object to compare with
+    # @return [Boolean] True if the agents are equal, false otherwise
+    def ==(other)
+      return false unless other.is_a?(Agent)
       
-      if missing_inputs.any?
-        error_msg = "Missing required inputs: #{missing_inputs.join(', ')}"
-        @logger.error(error_msg)
-        raise AgentError.new(error_msg, agent: name, context: context)
+      name == other.name &&
+        description == other.description &&
+        input == other.input &&
+        output == other.output &&
+        prompt == other.prompt &&
+        tools == other.tools
+    end
+
+    private
+
+    # Render the prompt template with the provided context
+    # @param context [Hash] The context for rendering the prompt
+    # @return [String] The rendered prompt
+    def render_prompt(context = {})
+      begin
+        ERB.new(prompt).result_with_hash(context)
+      rescue StandardError => e
+        @logger.error("Failed to render prompt: #{e.message}")
+        raise PromptError, "Failed to render prompt: #{e.message}"
+      end
+    end
+
+    # Validate that all required inputs are provided
+    # @param inputs [Hash] The input values to validate
+    # @raise [AgentError] If any required inputs are missing
+    def validate_inputs(inputs)
+      missing = []
+      
+      input.each do |name, options|
+        if options.is_a?(Hash) && options[:required] && !inputs.key?(name)
+          missing << name
+        end
+      end
+      
+      unless missing.empty?
+        @logger.error("Missing required inputs: #{missing.join(', ')}")
+        raise AgentError, "Missing required inputs: #{missing.join(', ')}"
       end
     end
   end

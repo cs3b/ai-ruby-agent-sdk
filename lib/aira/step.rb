@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'aira/errors'
+
 module Aira
   # A step in an agent's workflow
   class Step
@@ -18,17 +20,18 @@ module Aira
       @logger = Aira::Logger.for(:step)
     end
 
-    # Run the step with the given context
+    # Execute the step with the given context
     # @param context [Hash] The context for the step
     # @return [Hash] The updated context after the step
-    def run(context)
+    def execute(context)
       @logger.info("Running step #{name}...")
       
       begin
-        # If a tool is specified, add it to the context
-        if tool && (tool_instance = ToolRegistryAdapter.get_tool(tool))
+        # If a tool is specified, execute it with the context
+        if tool && (tool_instance = Aira::ToolRegistry.get(tool))
           @logger.debug("Using tool #{tool} for step #{name}")
-          context[:_current_tool] = tool_instance
+          result = tool_instance.call(context)
+          context[:_tool_result] = result
         end
         
         # Execute the block if provided
@@ -43,9 +46,11 @@ module Aira
         context
       rescue StandardError => e
         @logger.error("Step #{name} failed: #{e.message}")
-        raise StepError.new("Step #{name} failed: #{e.message}", 
-          step: name, input: context, cause: e)
+        raise StepError, "Step #{name} failed: #{e.message}"
       end
     end
+    
+    # Alias for backward compatibility
+    alias_method :run, :execute
   end
 end

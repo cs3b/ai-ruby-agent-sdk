@@ -17,9 +17,8 @@ require_relative "aira/tool_registry_adapter"
 module Aira
   class Error < StandardError; end
   
-  # Extend the DSL methods to the main module
-  extend DSL
-  
-  # Register all tools with RubyLLM on load
-  ToolRegistryAdapter.register_with_ruby_llm
+  # Include the DSL methods directly in the Aira module
+  def self.agent(name, &block)
+    DSL.agent(name, &block)
+  end
 end
