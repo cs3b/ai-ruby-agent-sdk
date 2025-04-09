@@ -15,21 +15,23 @@ module Aira
       param :operation, desc: "Operation to perform (read, write, or list)"
 
       # Execute the file tool with the given parameters
-      # @param path [String] The file or directory path
-      # @param operation [String] The operation to perform (read, write, or list)
-      # @param content [String, nil] The content to write (for write operations)
+      # @param params [Hash] The parameters
       # @return [Hash] The result of the operation
-      def execute(path:, operation:, content: nil)
+      def call(params)
+        path = params[:path]
+        operation = params[:operation]
+        content = params[:content]
+        
         case operation.to_s.downcase
         when 'read'
           read_file(path)
         when 'write'
-          raise ArgumentError, "Content is required for write operations" unless content
+          raise Aira::Error, "Content is required for write operations" unless content
           write_file(path, content)
         when 'list'
           list_files(path)
         else
-          { error: "Unknown operation: #{operation}. Must be one of: read, write, list" }
+          raise Aira::Error, "Invalid operation: #{operation}. Must be one of: read, write, list"
         end
       end
 
@@ -39,10 +41,14 @@ module Aira
       # @param path [String] The file path
       # @return [Hash] The file content
       def read_file(path)
+        unless File.exist?(path)
+          raise Aira::Error, "File does not exist: #{path}"
+        end
+        
         content = File.read(path)
         { content: content, path: path }
       rescue StandardError => e
-        { error: "Failed to read file: #{e.message}", path: path }
+        raise Aira::Error, "Failed to read file: #{e.message}"
       end
 
       # Write to a file
@@ -50,30 +56,27 @@ module Aira
       # @param content [String] The content to write
       # @return [Hash] The result of the operation
       def write_file(path, content)
-        # Create the directory if it doesn't exist
-        FileUtils.mkdir_p(File.dirname(path)) unless File.directory?(File.dirname(path))
+        # Create parent directories if they don't exist
+        FileUtils.mkdir_p(File.dirname(path))
         
         File.write(path, content)
         { success: true, path: path }
       rescue StandardError => e
-        { error: "Failed to write file: #{e.message}", path: path }
+        raise Aira::Error, "Failed to write file: #{e.message}"
       end
 
       # List files in a directory
       # @param path [String] The directory path
       # @return [Hash] The list of files
       def list_files(path)
-        files = Dir.glob(File.join(path, '*')).map do |file|
-          {
-            path: file,
-            name: File.basename(file),
-            directory: File.directory?(file),
-            size: File.size(file)
-          }
+        unless Dir.exist?(path)
+          raise Aira::Error, "Directory does not exist: #{path}"
         end
+        
+        files = Dir.entries(path).reject { |f| f == '.' || f == '..' }
         { files: files, path: path }
       rescue StandardError => e
-        { error: "Failed to list files: #{e.message}", path: path }
+        raise Aira::Error, "Failed to list files: #{e.message}"
       end
     end
   end
