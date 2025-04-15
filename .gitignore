@@ -26,3 +26,5 @@ Gemfile.lock
 
 # OS specific
 .DS_Store
+
+task-manager
